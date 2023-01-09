@@ -19,4 +19,6 @@ follows.
  - Run `python3 app.py`
  - When you run the first time, you will be asked to authenticate with your Google account don't worry, it's safe.
 
-
+## How can I use docker?
+ - First, you should be run it locally and get the `saved_credentials.json` file in credentials folder.
+ - Then, you can use `Makefile` to build and run the docker image.

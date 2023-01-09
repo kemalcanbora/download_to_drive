@@ -1,0 +1,20 @@
+dataset:
+  - name: ingredient_detections.json
+    url: http://data.csail.mit.edu/im2recipe/det_ingrs.json
+    drive_path_id: 1WBxCEvAu_tVcSpco0rs5Zzb0VtouN8Ly
+
+  - name: layer.gz
+    url: http://data.csail.mit.edu/im2recipe/recipe1M_layers.tar.gz
+    drive_path_id: 1WBxCEvAu_tVcSpco0rs5Zzb0VtouN8Ly
+
+  - name: validation.tar
+    url: http://data.csail.mit.edu/im2recipe/recipe1M_images_val.tar
+    drive_path_id: 1WBxCEvAu_tVcSpco0rs5Zzb0VtouN8Ly
+
+  - name: test.tar
+    url: http://data.csail.mit.edu/im2recipe/recipe1M_images_test.tar
+    drive_path_id: 1WBxCEvAu_tVcSpco0rs5Zzb0VtouN8Ly
+
+  - name: train.tar
+    url: http://data.csail.mit.edu/im2recipe/recipe1M_images_train.tar
+    drive_path_id: 1WBxCEvAu_tVcSpco0rs5Zzb0VtouN8Ly

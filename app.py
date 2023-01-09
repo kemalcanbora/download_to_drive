@@ -32,11 +32,7 @@ class DownloadToDrive:
             url = item["url"]
             r = requests.get(url, stream=True)
             with open(item["name"], 'wb') as f:
-                for chunk in progress_decorator(r.iter_content(10, False),
-                                                unit_scale=True,
-                                                total=int(r.headers['Content-Length'])/1024,
-                                                unit="kB"
-                                                ):
+                for chunk in progress_decorator(r.iter_content(chunk_size=1024 * 1024 * 30)):
                     if chunk:
                         f.write(chunk)
                         f.flush()

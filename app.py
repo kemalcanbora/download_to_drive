@@ -27,12 +27,16 @@ class DownloadToDrive:
         drive = GoogleDrive(g_auth)
         return drive
 
-    def download(self, chuck_size=1024):
+    def download(self, progress_decorator=tqdm):
         for item in self.data_sets:
             url = item["url"]
             r = requests.get(url, stream=True)
             with open(item["name"], 'wb') as f:
-                for chunk in tqdm(r.iter_content(chunk_size=chuck_size)):
+                for chunk in progress_decorator(r.iter_content(10, False),
+                                                unit_scale=True,
+                                                total=int(r.headers['Content-Length'])/1024,
+                                                unit="kB"
+                                                ):
                     if chunk:
                         f.write(chunk)
                         f.flush()

@@ -5,6 +5,7 @@ from apiclient import discovery
 from googleapiclient.http import MediaFileUpload
 import requests
 import certifi
+import os
 
 
 class DownloadToDrive:
@@ -62,7 +63,7 @@ class DownloadToDrive:
                     media_body=MediaFileUpload(filename=item["name"],
                                                mimetype=item["mimeType"])).execute()
             print("Uploaded file with ID {}".format(file.get('id')))
-            # os.remove(item["name"])
+            os.remove(item["name"])
 
 if __name__ == '__main__':
     DownloadToDrive().download()

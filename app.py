@@ -1,59 +1,68 @@
-from pydrive.auth import GoogleAuth
-from pydrive.drive import GoogleDrive
 from tqdm import tqdm
 from config import read_config
-import os
-import ssl
-import urllib.request
+from google.oauth2 import service_account
+from apiclient import discovery
+from googleapiclient.http import MediaFileUpload
+import requests
 import certifi
 
 
 class DownloadToDrive:
     def __init__(self):
-        self.credentials_path = os.getcwd()+"/credentials/saved_credentials.json"
+        self.scopes_list = ['https://www.googleapis.com/auth/drive', 'https://www.googleapis.com/auth/drive.file']
+        self.credentials_json = "credentials.json"
         self.data_sets = read_config()["dataset"]
-        self.drive = self.google_auth()
+        self.service = self.google_auth()
+        self.header = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:49.0) Gecko/20100101 Firefox/49.0',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate',
+            'DNT': '1',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1'
+        }
 
     def google_auth(self):
-        g_auth = GoogleAuth()
-        g_auth.LoadCredentialsFile(self.credentials_path)
-        if g_auth.credentials is None:
-            g_auth.LocalWebserverAuth()
-        elif g_auth.access_token_expired:
-            # Refresh them if expired
-            g_auth.Refresh()
-        else:
-            # Initialize the saved creds
-            g_auth.Authorize()
-            # Save the current credentials to a file
-        g_auth.SaveCredentialsFile(self.credentials_path)
-        drive = GoogleDrive(g_auth)
-        return drive
+        credentials = service_account.Credentials.from_service_account_file(self.credentials_json, scopes=self.scopes_list)
+        service = discovery.build('drive', 'v3', credentials=credentials, cache_discovery=False)
+
+        return service
 
     def download(self, progress_decorator=tqdm):
-        ssl_context = ssl.create_default_context(cafile=certifi.where())
+
         for item in self.data_sets:
             url = item["url"]
-            response = urllib.request.urlopen(url, context=ssl_context)
-            file_size = int(response.info().get("Content-Length", -1))
-            progress = progress_decorator(total=file_size, unit="iB", unit_scale=True)
-            with open(item["name"], "wb") as f:
-                while True:
-                    data = response.read(1024)
-                    if not data:
-                        break
-                    progress.update(len(data))
-                    f.write(data)
-            progress.close()
-            if file_size != 0 and progress.n != file_size:
-                print("ERROR, something went wrong")
-            else:
-                file = self.drive.CreateFile({'parents': [{'id': item["drive_path_id"]}],
-                                              'title': item["name"]})
-                file.SetContentFile(item["name"])
-                file.Upload()
-                print("Uploaded file with ID {}".format(file.get('id')))
-                os.remove(item["name"])
+            print(f"Downloading {url}")
+            body = {
+                'name': item["name"],
+                'title': item["name"],
+                'description': item["name"],
+                'mimeType': item["mimeType"],
+                'parents': item["drive_path_id"]
+            }
+
+            response = requests.get(url,
+                                    cert=certifi.where(),
+                                    verify=False,
+                                    stream=True,
+                                    headers=self.header)
+            total_size_in_bytes = int(response.headers.get('content-length', 0))
+            block_size = 1024  # 1 Kibibyte
+            progress_bar = progress_decorator(total=total_size_in_bytes, unit='iB', unit_scale=True)
+            with open(item["name"], 'wb') as file:
+                for data in response.iter_content(block_size):
+                    progress_bar.update(len(data))
+                    file.write(data)
+            progress_bar.close()
+
+            file = self.service.files().create(
+                    supportsAllDrives=True,
+                    body=body,
+                    media_body=MediaFileUpload(filename=item["name"],
+                                               mimetype=item["mimeType"])).execute()
+            print("Uploaded file with ID {}".format(file.get('id')))
+            # os.remove(item["name"])
 
 if __name__ == '__main__':
     DownloadToDrive().download()
